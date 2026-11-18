@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bestie",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2025-03-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  // Workers AI binding: the worker calls the model directly through this
+  // binding — no API keys or secrets required at runtime.
+  "ai": {
+    "binding": "AI"
+  },
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    // Workers AI model used through the AI binding (and the REST fallback).
+    "LLM_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  },
+  // NOTE: No secrets are required for Workers AI. If you prefer another
+  // OpenAI-compatible provider instead, set these with `wrangler secret put`:
+  //   npx wrangler secret put LLM_BASE_URL
+  //   npx wrangler secret put LLM_API_KEY
+}

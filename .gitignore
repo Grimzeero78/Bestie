@@ -1,0 +1,52 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+.next
+
+# opennext + wrangler
+/.open-next/
+.open-next
+/.wrangler/
+.wrangler
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug logs
+*.log
+dev.log
+server.log
+
+# local env files — NEVER commit
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# local database
+/db
+*.db
+*.db-journal
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# editor
+.idea
+.vscode
+
+# project-local
+/skills/
+/tool-results/
+/scripts/

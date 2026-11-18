@@ -1,0 +1,376 @@
+/**
+ * BESTIE — UI translations for all 7 supported languages.
+ * Keys are typed; every language must provide every key.
+ * Copy is intentionally terse — short labels, no paragraphs.
+ */
+
+import type { LanguageCode } from "./languages";
+
+export interface Dictionary {
+  tagline: string;
+  newChat: string;
+  chats: string;
+  placeholder: string;
+  send: string;
+  greeting: string;
+  greetingSub: string;
+  chips: string[];
+  cancel: string;
+  delete: string;
+  deleteChatTitle: string;
+  deleteChatDesc: string;
+  deleteAll: string;
+  deleteAllTitle: string;
+  deleteAllDesc: string;
+  renamed: string;
+  rename: string;
+  export: string;
+  copied: string;
+  thinking: string;
+  stop: string;
+  error: string;
+  languageLabel: string;
+  theme: string;
+  light: string;
+  dark: string;
+  system: string;
+  privacyTitle: string;
+  privacyLine1: string;
+  privacyLine2: string;
+  privacyLine3: string;
+  aboutTitle: string;
+  aboutLine1: string;
+  aboutLine2: string;
+  safetyLine: string;
+  emptyChats: string;
+  exportDone: string;
+  memoryNote: string;
+}
+
+export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
+  en: {
+    tagline: "Your faith friend",
+    newChat: "New chat",
+    chats: "Chats",
+    placeholder: "Ask Bestie anything…",
+    send: "Send message",
+    greeting: "Hey, friend. I'm Bestie.",
+    greetingSub: "Faith. Doubt. Life. Ask.",
+    chips: [
+      "Does God really love me?",
+      "How do I forgive someone who hurt me?",
+      "Why does God allow suffering?",
+      "I feel far from God",
+    ],
+    cancel: "Cancel",
+    delete: "Delete",
+    deleteChatTitle: "Delete this chat?",
+    deleteChatDesc: "Gone forever. No copy exists anywhere.",
+    deleteAll: "Delete all",
+    deleteAllTitle: "Delete all chats?",
+    deleteAllDesc: "Everything on this device, erased forever.",
+    renamed: "Renamed",
+    rename: "Rename",
+    export: "Export",
+    copied: "Copied",
+    thinking: "Thinking…",
+    stop: "Stop",
+    error: "Something broke. Try again.",
+    languageLabel: "Language",
+    theme: "Theme",
+    light: "Light",
+    dark: "Dark",
+    system: "System",
+    privacyTitle: "Private by design",
+    privacyLine1: "Chats live only on this device.",
+    privacyLine2: "No logs. No tracking. No server storage.",
+    privacyLine3: "Delete = gone everywhere, forever.",
+    aboutTitle: "About Bestie",
+    aboutLine1: "A Christian companion. Listens first, asks honest questions, points to truth.",
+    aboutLine2: "Not Jesus. Not God. Not a replacement for your church, pastor or doctor.",
+    safetyLine: "Biblical encouragement, not counselling. In crisis, contact local emergency services.",
+    emptyChats: "No chats yet",
+    exportDone: "Exported",
+    memoryNote: "Remembered on this device only.",
+  },
+
+  sw: {
+    tagline: "Rafiki yako wa imani",
+    newChat: "Mpya",
+    chats: "Mazungumzo",
+    placeholder: "Uliza Bestie chochote…",
+    send: "Tuma ujumbe",
+    greeting: "Habari, rafiki. Mimi ni Bestie.",
+    greetingSub: "Imani. Shaka. Maisha. Uliza.",
+    chips: [
+      "Mungu kweli ananipenda?",
+      "Ninawezaje kusamehe aliyeniumiza?",
+      "Kwa nini Mungu anaruhusu mateso?",
+      "Nazisikia mbali na Mungu",
+    ],
+    cancel: "Ghairi",
+    delete: "Futa",
+    deleteChatTitle: "Ufute mazungumzo haya?",
+    deleteChatDesc: "Yameisha milele. Hakuna nakala popote.",
+    deleteAll: "Futa yote",
+    deleteAllTitle: "Ufute yote?",
+    deleteAllDesc: "Yote kwenye kifaa hiki yatafutwa milele.",
+    renamed: "Jina libadilishwa",
+    rename: "Badilisha jina",
+    export: "Hamisha",
+    copied: "Imenakiliwa",
+    thinking: "Inafikiri…",
+    stop: "Simamisha",
+    error: "Kuna hitilafu. Jaribu tena.",
+    languageLabel: "Lugha",
+    theme: "Mandhari",
+    light: "Mwanga",
+    dark: "Giza",
+    system: "Mfumo",
+    privacyTitle: "Faragha kwa kukusudi",
+    privacyLine1: "Mazungumzo yako kwenye kifaa hiki pekee.",
+    privacyLine2: "Hakuna kufuatiliwa. Hakuna kuhifadhiwa.",
+    privacyLine3: "Kufuta = kwisha milele.",
+    aboutTitle: "Kuhusu Bestie",
+    aboutLine1: "Mwenzako wa Kikristo. Husikiliza kwanza, huuliza, na kukuongoza kwa ukweli.",
+    aboutLine2: "Si Yesu. Si Mungu. Si mbadala wa kanisa, mchungaji au daktari.",
+    safetyLine: "Faraja ya Kibiblia, si ushauri wa kitaalamu. Katika hatari, piga simu ya dharura.",
+    emptyChats: "Hakuna bado",
+    exportDone: "Imehamishwa",
+    memoryNote: "Hukumbukwa kwenye kifaa hiki pekee.",
+  },
+
+  fr: {
+    tagline: "Ton ami dans la foi",
+    newChat: "Nouvelle discussion",
+    chats: "Discussions",
+    placeholder: "Demande à Bestie…",
+    send: "Envoyer",
+    greeting: "Salut, l'ami. Je suis Bestie.",
+    greetingSub: "Foi. Doute. Vie. Demande.",
+    chips: [
+      "Est-ce que Dieu m'aime vraiment ?",
+      "Comment pardonner à qui m'a blessé ?",
+      "Pourquoi Dieu permet-il la souffrance ?",
+      "Je me sens loin de Dieu",
+    ],
+    cancel: "Annuler",
+    delete: "Supprimer",
+    deleteChatTitle: "Supprimer cette discussion ?",
+    deleteChatDesc: "Disparue pour toujours. Aucune copie.",
+    deleteAll: "Tout supprimer",
+    deleteAllTitle: "Tout supprimer ?",
+    deleteAllDesc: "Tout cet appareil, effacé pour toujours.",
+    renamed: "Renommée",
+    rename: "Renommer",
+    export: "Exporter",
+    copied: "Copié",
+    thinking: "Réflexion…",
+    stop: "Arrêter",
+    error: "Une erreur. Réessaie.",
+    languageLabel: "Langue",
+    theme: "Thème",
+    light: "Clair",
+    dark: "Sombre",
+    system: "Système",
+    privacyTitle: "Confidentiel par design",
+    privacyLine1: "Discussions sur cet appareil seulement.",
+    privacyLine2: "Aucun suivi. Aucun serveur.",
+    privacyLine3: "Supprimer = disparu partout, pour toujours.",
+    aboutTitle: "À propos de Bestie",
+    aboutLine1: "Un compagnon chrétien. Écoute d'abord, pose des questions honnêtes, pointe vers la vérité.",
+    aboutLine2: "Pas Jésus. Pas Dieu. Ne remplace pas ton église, ton pasteur ou ton médecin.",
+    safetyLine: "Encouragement biblique, pas un conseil pro. En crise, contacte les urgences.",
+    emptyChats: "Aucune discussion",
+    exportDone: "Exportée",
+    memoryNote: "Retenue sur cet appareil seulement.",
+  },
+
+  es: {
+    tagline: "Tu amigo de fe",
+    newChat: "Nueva conversación",
+    chats: "Conversaciones",
+    placeholder: "Pregúntale a Bestie…",
+    send: "Enviar",
+    greeting: "Hola, amigo. Soy Bestie.",
+    greetingSub: "Fe. Duda. Vida. Pregunta.",
+    chips: [
+      "¿Dios realmente me ama?",
+      "¿Cómo perdono a quien me lastimó?",
+      "¿Por qué Dios permite el sufrimiento?",
+      "Me siento lejos de Dios",
+    ],
+    cancel: "Cancelar",
+    delete: "Eliminar",
+    deleteChatTitle: "¿Eliminar esta conversación?",
+    deleteChatDesc: "Desaparece para siempre. Sin copias.",
+    deleteAll: "Eliminar todo",
+    deleteAllTitle: "¿Eliminar todo?",
+    deleteAllDesc: "Todo en este dispositivo, borrado para siempre.",
+    renamed: "Renombrada",
+    rename: "Renombrar",
+    export: "Exportar",
+    copied: "Copiado",
+    thinking: "Pensando…",
+    stop: "Detener",
+    error: "Algo falló. Intenta de nuevo.",
+    languageLabel: "Idioma",
+    theme: "Tema",
+    light: "Claro",
+    dark: "Oscuro",
+    system: "Sistema",
+    privacyTitle: "Privado por diseño",
+    privacyLine1: "Conversaciones solo en este dispositivo.",
+    privacyLine2: "Sin registros. Sin rastreo. Sin servidores.",
+    privacyLine3: "Eliminar = desaparece para siempre.",
+    aboutTitle: "Acerca de Bestie",
+    aboutLine1: "Compañero cristiano. Escucha primero, pregunta honesto, señala la verdad.",
+    aboutLine2: "No es Jesús. No es Dios. No reemplaza tu iglesia, pastor o médico.",
+    safetyLine: "Ánimo bíblico, no asesoría profesional. En crisis, contacta emergencias.",
+    emptyChats: "Aún no hay nada",
+    exportDone: "Exportada",
+    memoryNote: "Recordada solo en este dispositivo.",
+  },
+
+  pt: {
+    tagline: "Seu amigo de fé",
+    newChat: "Nova conversa",
+    chats: "Conversas",
+    placeholder: "Pergunte à Bestie…",
+    send: "Enviar",
+    greeting: "Olá, amigo. Eu sou a Bestie.",
+    greetingSub: "Fé. Dúvida. Vida. Pergunte.",
+    chips: [
+      "Deus realmente me ama?",
+      "Como perdoar quem me feriu?",
+      "Por que Deus permite o sofrimento?",
+      "Sinto-me longe de Deus",
+    ],
+    cancel: "Cancelar",
+    delete: "Excluir",
+    deleteChatTitle: "Excluir esta conversa?",
+    deleteChatDesc: "Some para sempre. Nenhuma cópia.",
+    deleteAll: "Excluir tudo",
+    deleteAllTitle: "Excluir tudo?",
+    deleteAllDesc: "Tudo neste dispositivo, apagado para sempre.",
+    renamed: "Renomeada",
+    rename: "Renomear",
+    export: "Exportar",
+    copied: "Copiado",
+    thinking: "Pensando…",
+    stop: "Parar",
+    error: "Algo falhou. Tente de novo.",
+    languageLabel: "Idioma",
+    theme: "Tema",
+    light: "Claro",
+    dark: "Escuro",
+    system: "Sistema",
+    privacyTitle: "Privado por design",
+    privacyLine1: "Conversas só neste dispositivo.",
+    privacyLine2: "Sem registros. Sem rastreio. Sem servidores.",
+    privacyLine3: "Excluir = sumiu para sempre.",
+    aboutTitle: "Sobre a Bestie",
+    aboutLine1: "Companhia cristã. Ouve primeiro, pergunta honesto, aponta para a verdade.",
+    aboutLine2: "Não é Jesus. Não é Deus. Não substitui igreja, pastor ou médico.",
+    safetyLine: "Encorajamento bíblico, não aconselhamento. Em crise, ligue para a emergência.",
+    emptyChats: "Nada por aqui",
+    exportDone: "Exportada",
+    memoryNote: "Guardada só neste dispositivo.",
+  },
+
+  zh: {
+    tagline: "你的信仰伙伴",
+    newChat: "新对话",
+    chats: "对话",
+    placeholder: "向 Bestie 提问…",
+    send: "发送",
+    greeting: "你好，朋友。我是 Bestie。",
+    greetingSub: "信仰。疑惑。生活。问吧。",
+    chips: [
+      "神真的爱我吗？",
+      "怎样原谅伤害过我的人？",
+      "神为什么允许苦难？",
+      "我觉得离神很远",
+    ],
+    cancel: "取消",
+    delete: "删除",
+    deleteChatTitle: "删除这个对话？",
+    deleteChatDesc: "永久消失，没有任何备份。",
+    deleteAll: "删除全部",
+    deleteAllTitle: "删除全部？",
+    deleteAllDesc: "本设备上的所有内容将被永久清除。",
+    renamed: "已重命名",
+    rename: "重命名",
+    export: "导出",
+    copied: "已复制",
+    thinking: "思考中…",
+    stop: "停止",
+    error: "出错了，请重试。",
+    languageLabel: "语言",
+    theme: "主题",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
+    privacyTitle: "隐私至上",
+    privacyLine1: "对话只保存在本设备。",
+    privacyLine2: "不记录、不追踪、不上传。",
+    privacyLine3: "删除 = 永远消失。",
+    aboutTitle: "关于 Bestie",
+    aboutLine1: "基督信仰伙伴：先倾听、善提问、指向真理。",
+    aboutLine2: "不是耶稣，不是神，不能替代你的教会、牧师或医生。",
+    safetyLine: "圣经的鼓励，不是专业辅导。危机时请联系当地紧急服务。",
+    emptyChats: "还没有对话",
+    exportDone: "已导出",
+    memoryNote: "只记在本设备上。",
+  },
+
+  hi: {
+    tagline: "आपका विश्वास का मित्र",
+    newChat: "नई बातचीत",
+    chats: "बातचीत",
+    placeholder: "Bestie से पूछें…",
+    send: "भेजें",
+    greeting: "नमस्ते, मित्र। मैं Bestie हूँ।",
+    greetingSub: "विश्वास। संदेह। जीवन। पूछिए।",
+    chips: [
+      "क्या परमेश्वर सचमुच मुझसे प्रेम करता है?",
+      "जिसने मुझे दुखी किया उसे क्षमा कैसे करूँ?",
+      "परमेश्वर दुख क्यों होने देता है?",
+      "मैं परमेश्वर से दूर महसूस करता हूँ",
+    ],
+    cancel: "रद्द करें",
+    delete: "मिटाएँ",
+    deleteChatTitle: "यह बातचीत मिटाएँ?",
+    deleteChatDesc: "हमेशा के लिए समाप्त। कोई प्रति नहीं।",
+    deleteAll: "सब मिटाएँ",
+    deleteAllTitle: "सब मिटाएँ?",
+    deleteAllDesc: "इस डिवाइस की सारी बातचीत हमेशा के लिए मिट जाएगी।",
+    renamed: "नाम बदल गया",
+    rename: "नाम बदलें",
+    export: "निर्यात",
+    copied: "कॉपी हो गया",
+    thinking: "सोच रहा है…",
+    stop: "रोकें",
+    error: "कुछ गलत हुआ। फिर प्रयास करें।",
+    languageLabel: "भाषा",
+    theme: "थीम",
+    light: "उजला",
+    dark: "गहरा",
+    system: "सिस्टम",
+    privacyTitle: "निजता सर्वोपरि",
+    privacyLine1: "बातचीत केवल इसी डिवाइस पर।",
+    privacyLine2: "न रिकॉर्ड, न ट्रैकिंग, न सर्वर।",
+    privacyLine3: "मिटाया = हमेशा के लिए समाप्त।",
+    aboutTitle: "Bestie के बारे में",
+    aboutLine1: "ईसाई साथी: पहले सुनता है, प्रश्न पूछता है, सत्य की ओर ले जाता है।",
+    aboutLine2: "यीशु नहीं, परमेश्वर नहीं। आपके चर्च, पादरी या चिकित्सक का विकल्प नहीं।",
+    safetyLine: "बाइबल का प्रोत्साहन, पेशेवर परामर्श नहीं। संकट में आपातकालीन सेवा से संपर्क करें।",
+    emptyChats: "अभी कुछ नहीं",
+    exportDone: "निर्यात हुई",
+    memoryNote: "केवल इसी डिवाइस पर याद रखा जाता है।",
+  },
+};
+
+export function getDictionary(code: string): Dictionary {
+  return TRANSLATIONS[code as LanguageCode] ?? TRANSLATIONS.en;
+}
