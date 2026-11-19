@@ -42,6 +42,8 @@ interface BestieState {
   appendToLast: (chatId: string, delta: string) => void;
   setMessageContent: (chatId: string, messageId: string, content: string) => void;
   removeMessage: (chatId: string, messageId: string) => void;
+  /** Remove the message and every message after it (for edit-and-resend). */
+  truncateFrom: (chatId: string, messageId: string) => void;
   setLanguage: (code: LanguageCode) => void;
 }
 
@@ -135,6 +137,16 @@ export const useBestieStore = create<BestieState>()(
               ? { ...c, messages: c.messages.filter((m) => m.id !== messageId), updatedAt: Date.now() }
               : c
           ),
+        })),
+
+      truncateFrom: (chatId, messageId) =>
+        set((s) => ({
+          chats: s.chats.map((c) => {
+            if (c.id !== chatId) return c;
+            const idx = c.messages.findIndex((m) => m.id === messageId);
+            if (idx === -1) return c;
+            return { ...c, messages: c.messages.slice(0, idx), updatedAt: Date.now() };
+          }),
         })),
 
       setLanguage: (code) => set({ language: code }),

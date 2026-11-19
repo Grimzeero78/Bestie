@@ -16,6 +16,8 @@ export interface Dictionary {
   greetingSub: string;
   chips: string[];
   cancel: string;
+  edit: string;
+  saveResend: string;
   delete: string;
   deleteChatTitle: string;
   deleteChatDesc: string;
@@ -63,6 +65,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "I feel far from God",
     ],
     cancel: "Cancel",
+    edit: "Edit",
+    saveResend: "Save & resend",
     delete: "Delete",
     deleteChatTitle: "Delete this chat?",
     deleteChatDesc: "Gone forever. No copy exists anywhere.",
@@ -109,6 +113,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "Nazisikia mbali na Mungu",
     ],
     cancel: "Ghairi",
+    edit: "Badilisha",
+    saveResend: "Hifadhi na tuma tena",
     delete: "Futa",
     deleteChatTitle: "Ufute mazungumzo haya?",
     deleteChatDesc: "Yameisha milele. Hakuna nakala popote.",
@@ -155,6 +161,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "Je me sens loin de Dieu",
     ],
     cancel: "Annuler",
+    edit: "Modifier",
+    saveResend: "Enregistrer et renvoyer",
     delete: "Supprimer",
     deleteChatTitle: "Supprimer cette discussion ?",
     deleteChatDesc: "Disparue pour toujours. Aucune copie.",
@@ -201,6 +209,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "Me siento lejos de Dios",
     ],
     cancel: "Cancelar",
+    edit: "Editar",
+    saveResend: "Guardar y reenviar",
     delete: "Eliminar",
     deleteChatTitle: "¿Eliminar esta conversación?",
     deleteChatDesc: "Desaparece para siempre. Sin copias.",
@@ -247,6 +257,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "Sinto-me longe de Deus",
     ],
     cancel: "Cancelar",
+    edit: "Editar",
+    saveResend: "Salvar e reenviar",
     delete: "Excluir",
     deleteChatTitle: "Excluir esta conversa?",
     deleteChatDesc: "Some para sempre. Nenhuma cópia.",
@@ -293,6 +305,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "我觉得离神很远",
     ],
     cancel: "取消",
+    edit: "编辑",
+    saveResend: "保存并重发",
     delete: "删除",
     deleteChatTitle: "删除这个对话？",
     deleteChatDesc: "永久消失，没有任何备份。",
@@ -339,6 +353,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
       "मैं परमेश्वर से दूर महसूस करता हूँ",
     ],
     cancel: "रद्द करें",
+    edit: "संपादित करें",
+    saveResend: "सहेजें और दोबारा भेजें",
     delete: "मिटाएँ",
     deleteChatTitle: "यह बातचीत मिटाएँ?",
     deleteChatDesc: "हमेशा के लिए समाप्त। कोई प्रति नहीं।",

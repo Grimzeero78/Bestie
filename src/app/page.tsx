@@ -28,6 +28,7 @@ export default function BestiePage() {
   const appendToLast = useBestieStore((s) => s.appendToLast);
   const setMessageContent = useBestieStore((s) => s.setMessageContent);
   const removeMessage = useBestieStore((s) => s.removeMessage);
+  const truncateFrom = useBestieStore((s) => s.truncateFrom);
   const setLanguage = useBestieStore((s) => s.setLanguage);
 
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -44,27 +45,11 @@ export default function BestiePage() {
     document.documentElement.lang = language;
   }, [language]);
 
-  const send = useCallback(
-    async (text: string) => {
-      if (streamingRef.current || !text.trim()) return;
-      const state = useBestieStore.getState();
-
-      let chatId = state.activeChatId;
-      if (!chatId || !state.chats.some((c) => c.id === chatId)) {
-        chatId = state.createChat();
-      }
-
-      const priorMessages =
-        state.chats.find((c) => c.id === chatId)?.messages.map((m) => ({
-          role: m.role,
-          content: m.content,
-        })) ?? [];
-
-      addMessage(chatId, { id: crypto.randomUUID(), role: "user", content: text.trim() });
+  /** Stream a reply for the given payload messages into the chat's last assistant slot. */
+  const streamReply = useCallback(
+    async (chatId: string, payloadMessages: { role: "user" | "assistant"; content: string }[]) => {
       const assistantId = crypto.randomUUID();
       addMessage(chatId, { id: assistantId, role: "assistant", content: "" });
-
-      const payloadMessages = [...priorMessages, { role: "user" as const, content: text.trim() }];
 
       const controller = new AbortController();
       abortRef.current = controller;
@@ -126,6 +111,56 @@ export default function BestiePage() {
     [language, dict, addMessage, appendToLast, setMessageContent, removeMessage]
   );
 
+  const send = useCallback(
+    async (text: string) => {
+      if (streamingRef.current || !text.trim()) return;
+      const state = useBestieStore.getState();
+
+      let chatId = state.activeChatId;
+      if (!chatId || !state.chats.some((c) => c.id === chatId)) {
+        chatId = state.createChat();
+      }
+
+      const priorMessages =
+        state.chats.find((c) => c.id === chatId)?.messages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })) ?? [];
+
+      addMessage(chatId, { id: crypto.randomUUID(), role: "user", content: text.trim() });
+
+      const payloadMessages = [...priorMessages, { role: "user" as const, content: text.trim() }];
+      await streamReply(chatId, payloadMessages);
+    },
+    [addMessage, streamReply]
+  );
+
+  /** Edit a user message: drop it and everything after, then resend from that point. */
+  const editResend = useCallback(
+    async (messageId: string, newText: string) => {
+      if (streamingRef.current || !newText.trim()) return;
+      const state = useBestieStore.getState();
+      const chatId = state.activeChatId;
+      if (!chatId) return;
+
+      const chat = state.chats.find((c) => c.id === chatId);
+      const idx = chat?.messages.findIndex((m) => m.id === messageId) ?? -1;
+      if (idx === -1) return;
+
+      const priorMessages = chat!.messages.slice(0, idx).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      truncateFrom(chatId, messageId);
+      addMessage(chatId, { id: crypto.randomUUID(), role: "user", content: newText.trim() });
+
+      const payloadMessages = [...priorMessages, { role: "user" as const, content: newText.trim() }];
+      await streamReply(chatId, payloadMessages);
+    },
+    [addMessage, truncateFrom, streamReply]
+  );
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -171,7 +206,12 @@ export default function BestiePage() {
         {showEmptyState ? (
           <EmptyState dict={dict} onPick={(text) => void send(text)} />
         ) : (
-          <MessageList dict={dict} messages={messages} streaming={streaming} />
+          <MessageList
+            dict={dict}
+            messages={messages}
+            streaming={streaming}
+            onEditResend={(messageId, text) => void editResend(messageId, text)}
+          />
         )}
 
         <Composer dict={dict} disabled={false} streaming={streaming} onSend={(t) => void send(t)} onStop={stop} />
