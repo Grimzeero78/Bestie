@@ -125,9 +125,13 @@ function sanitize(messages: IncomingMessage[]): IncomingMessage[] {
 function makeStream(): {
   enqueue: (text: string) => void;
   close: () => void;
+  isEmpty: () => boolean;
+  wasClosed: () => boolean;
   readable: ReadableStream<Uint8Array>;
 } {
   const encoder = new TextEncoder();
+  let sent = 0;
+  let closed = false;
   let controllerRef: ReadableStreamDefaultController<Uint8Array> | null = null;
   const readable = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -135,14 +139,18 @@ function makeStream(): {
     },
   });
   return {
+    isEmpty: () => sent === 0,
+    wasClosed: () => closed,
     enqueue(text) {
       try {
+        sent += 1;
         controllerRef?.enqueue(encoder.encode(`data: ${JSON.stringify({ t: text })}\n\n`));
       } catch {
         /* stream already closed */
       }
     },
     close() {
+      closed = true;
       try {
         controllerRef?.enqueue(encoder.encode("data: [DONE]\n\n"));
         controllerRef?.close();
@@ -160,7 +168,13 @@ async function streamFromOpenAICompatible(
   stream: ReturnType<typeof makeStream>
 ): Promise<void> {
   const baseUrl = process.env.LLM_BASE_URL!.replace(/\/+$/, "");
-  const model = process.env.LLM_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  // External providers need their own model name (e.g. Groq: "llama-3.3-70b-versatile").
+  // Set LLM_EXTERNAL_MODEL so the "@cf/..." binding model id is not sent to them.
+  const model =
+    process.env.LLM_EXTERNAL_MODEL ||
+    (process.env.LLM_MODEL && !process.env.LLM_MODEL.startsWith("@cf/")
+      ? process.env.LLM_MODEL
+      : "llama-3.3-70b-versatile");
   const baseMessages: ChatMsg[] = [{ role: "system", content: system }, ...history];
 
   const generate = async (messages: ChatMsg[]): Promise<string> => {
@@ -384,15 +398,33 @@ export async function POST(req: Request) {
 
   // Capture the AI binding synchronously — it stays valid inside the stream.
   const aiBinding = await getWorkersAIBinding();
+  const hasExternal = Boolean(process.env.LLM_BASE_URL && process.env.LLM_API_KEY);
 
   const stream = makeStream();
 
   const run = async () => {
+    // When an external OpenAI-compatible provider is configured it goes FIRST:
+    // it does not burn the account's daily Workers AI Neurons, and the free
+    // binding below stays as an automatic fallback.
+    if (hasExternal) {
+      try {
+        await streamFromOpenAICompatible(system, history, stream);
+        return;
+      } catch {
+        // Only fall back if nothing was streamed yet; never splice a second
+        // reply onto a half-delivered one.
+        if (!stream.isEmpty()) {
+          if (!stream.wasClosed) {
+            stream.enqueue("(Something went wrong on the service side. Please try again.)");
+            stream.close();
+          }
+          return;
+        }
+      }
+    }
     try {
       if (aiBinding) {
         await streamFromWorkersAI(aiBinding, system, history, stream, lang.code);
-      } else if (process.env.LLM_BASE_URL && process.env.LLM_API_KEY) {
-        await streamFromOpenAICompatible(system, history, stream);
       } else {
         await streamFromZAI(system, history, stream);
       }

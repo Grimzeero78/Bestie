@@ -26,8 +26,11 @@
     // Flip LLM_MODEL back to the 70B if you upgrade to Workers Paid.
     "LLM_MODEL": "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
   },
-  // NOTE: No secrets are required for Workers AI. If you prefer another
-  // OpenAI-compatible provider instead, set these with `wrangler secret put`:
-  //   npx wrangler secret put LLM_BASE_URL
-  //   npx wrangler secret put LLM_API_KEY
+  // NOTE: No secrets are required for Workers AI. To make Bestie work even
+  // when the daily free Neurons run out, add any OpenAI-compatible provider
+  // (e.g. Groq, OpenRouter, Gemini-compat) — it is tried FIRST automatically,
+  // with the free Workers AI binding kept as fallback:
+  //   npx wrangler secret put LLM_BASE_URL        // e.g. https://api.groq.com/openai/v1
+  //   npx wrangler secret put LLM_API_KEY         // provider API key
+  //   npx wrangler secret put LLM_EXTERNAL_MODEL  // e.g. llama-3.3-70b-versatile
 }
