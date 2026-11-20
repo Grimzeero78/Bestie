@@ -1,10 +1,16 @@
 /**
  * BESTIE — /api/chat
- * Stateless streaming chat endpoint.
+ * Stateless chat endpoint with a paced SSE stream.
  *
  * Privacy: this route stores and logs NOTHING. It receives messages, calls the
  * LLM, streams the reply back, and forgets everything. There is no database,
  * no persistence and no analytics anywhere in this app.
+ *
+ * Quality control: the full reply is generated, then the QUESTION LAW is
+ * enforced deterministically — a reply may hold at most ONE question mark.
+ * If the draft holds more, one quick repair pass rewrites the extras into
+ * statements before anything is sent to the client. The finished text is then
+ * released word-by-word so the chat still feels alive.
  *
  * Provider priority:
  *   1. Cloudflare Workers AI binding (production on Workers — no API keys needed).
@@ -24,8 +30,70 @@ interface IncomingMessage {
   content: string;
 }
 
+type ChatMsg = { role: string; content: string };
+
 const MAX_HISTORY_MESSAGES = 40;
 const MAX_CONTENT_CHARS = 16000;
+
+/** The QUESTION LAW: one reply, at most one question mark. */
+const QUESTION_LIMIT = 1;
+
+const REPAIR_SYSTEM = `You are a precise text editor. Your ONLY job: enforce the question law on the draft reply below.
+THE QUESTION LAW: the whole reply may contain AT MOST ONE question mark. Zero is allowed and often better.
+HOW TO FIX: keep the single strongest question (an opening one or the last one) and rewrite every other question into a plain statement with the same meaning.
+CHANGE NOTHING ELSE — same language, same length, same paragraph breaks, same tone, every Scripture quotation kept word-for-word in double quotation marks, no verse references added anywhere.
+Output ONLY the corrected reply text — no preamble, no explanation, no quotation marks around the whole reply.`;
+
+function countQuestionMarks(text: string): number {
+  return (text.match(/\?/g) || []).length;
+}
+
+/** Keep the draft unless it breaks the question law; then try one repair pass. */
+async function enforceQuestionLaw(
+  generate: (messages: ChatMsg[]) => Promise<string>,
+  draft: string
+): Promise<string> {
+  if (countQuestionMarks(draft) <= QUESTION_LIMIT) return draft;
+  try {
+    const fixed = await generate([
+      { role: "system", content: REPAIR_SYSTEM },
+      {
+        role: "user",
+        content: `Draft reply:\n\n${draft}\n\nReturn the corrected reply with at most one question mark.`,
+      },
+    ]);
+    const text = (fixed ?? "").trim();
+    const validShape = text.length > 40 && text.length < draft.length * 1.6;
+    if (validShape && countQuestionMarks(text) < countQuestionMarks(draft)) return text;
+  } catch {
+    /* repair failed — send the draft unchanged rather than nothing */
+  }
+  return draft;
+}
+
+/** Release a finished reply in small chunks so the chat still feels live. */
+async function releaseText(
+  text: string,
+  stream: ReturnType<typeof makeStream>,
+  paceMs = 24
+): Promise<void> {
+  const words = text.match(/\S+\s*/g) ?? [text];
+  let chunk = "";
+  for (const word of words) {
+    chunk += word;
+    if (chunk.length >= 26) {
+      stream.enqueue(chunk);
+      chunk = "";
+      await new Promise((resolve) => setTimeout(resolve, paceMs));
+    }
+  }
+  if (chunk) stream.enqueue(chunk);
+}
+
+function serviceError(stream: ReturnType<typeof makeStream>) {
+  stream.enqueue("(Something went wrong on the service side. Please try again.)");
+  stream.close();
+}
 
 function sanitize(messages: IncomingMessage[]): IncomingMessage[] {
   return messages
@@ -74,49 +142,26 @@ async function streamFromOpenAICompatible(
 ): Promise<void> {
   const baseUrl = process.env.LLM_BASE_URL!.replace(/\/+$/, "");
   const model = process.env.LLM_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  const baseMessages: ChatMsg[] = [{ role: "system", content: system }, ...history];
 
-  const res = await fetch(`${baseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.LLM_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model,
-      stream: true,
-      messages: [{ role: "system", content: system }, ...history],
-    }),
-  });
+  const generate = async (messages: ChatMsg[]): Promise<string> => {
+    const res = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.LLM_API_KEY}`,
+      },
+      body: JSON.stringify({ model, stream: false, messages }),
+    });
+    if (!res.ok) throw new Error(`upstream ${res.status}`);
+    const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+    return json.choices?.[0]?.message?.content ?? "";
+  };
 
-  if (!res.ok || !res.body) {
-    stream.enqueue(`(Service error ${res.status} — please try again.)`);
-    stream.close();
-    return;
-  }
-
-  const reader = res.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const payload = trimmed.slice(5).trim();
-      if (payload === "[DONE]") continue;
-      try {
-        const json = JSON.parse(payload);
-        const delta: string | undefined = json.choices?.[0]?.delta?.content;
-        if (delta) stream.enqueue(delta);
-      } catch {
-        /* ignore malformed keep-alive lines */
-      }
-    }
-  }
+  const draft = await generate(baseMessages);
+  if (!draft.trim()) return serviceError(stream);
+  const finalText = await enforceQuestionLaw(generate, draft);
+  await releaseText(finalText, stream);
   stream.close();
 }
 
@@ -135,37 +180,6 @@ function extractDeltaFromSsePayload(payload: string): string | undefined {
   }
 }
 
-/** Read a byte stream of `data: {...}` SSE lines and forward text deltas. */
-async function pumpSseByteStream(
-  body: ReadableStream<Uint8Array>,
-  stream: ReturnType<typeof makeStream>
-): Promise<void> {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split("\n");
-    buffer = lines.pop() ?? "";
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed.startsWith("data:")) continue;
-      const payload = trimmed.slice(5).trim();
-      if (payload === "[DONE]") continue;
-      const delta = extractDeltaFromSsePayload(payload);
-      if (delta) stream.enqueue(delta);
-    }
-  }
-  const rest = buffer.trim();
-  if (rest.startsWith("data:") && rest !== "[DONE]") {
-    const delta = extractDeltaFromSsePayload(rest.slice(5).trim());
-    if (delta) stream.enqueue(delta);
-  }
-  stream.close();
-}
-
 /**
  * Cloudflare Workers AI via the `AI` binding — used when the app runs inside
  * a Cloudflare Worker (deployed with @opennextjs/cloudflare).
@@ -178,19 +192,22 @@ async function streamFromWorkersAI(
   stream: ReturnType<typeof makeStream>
 ): Promise<void> {
   const model = process.env.LLM_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
-  const result = (await aiBinding.run(model, {
-    messages: [{ role: "system", content: system }, ...history],
-    stream: true,
-    max_tokens: 2048,
-  })) as ReadableStream<Uint8Array>;
+  const baseMessages: ChatMsg[] = [{ role: "system", content: system }, ...history];
 
-  if (result && typeof (result as ReadableStream).getReader === "function") {
-    await pumpSseByteStream(result as ReadableStream<Uint8Array>, stream);
-  } else {
-    const maybeText = result as { response?: string };
-    if (maybeText?.response) stream.enqueue(maybeText.response);
-    stream.close();
-  }
+  const generate = async (messages: ChatMsg[]): Promise<string> => {
+    const result = (await aiBinding.run(model, {
+      messages,
+      stream: false,
+      max_tokens: 2048,
+    })) as { response?: string };
+    return result?.response ?? "";
+  };
+
+  const draft = await generate(baseMessages);
+  if (!draft.trim()) return serviceError(stream);
+  const finalText = await enforceQuestionLaw(generate, draft);
+  await releaseText(finalText, stream);
+  stream.close();
 }
 
 /** Resolve the Workers AI binding when running on Cloudflare, else null. */
