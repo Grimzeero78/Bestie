@@ -184,7 +184,7 @@ async function streamFromOpenAICompatible(
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.LLM_API_KEY}`,
       },
-      body: JSON.stringify({ model, stream: false, messages }),
+      body: JSON.stringify({ model, stream: false, messages, max_tokens: 1024 }),
     });
     if (!res.ok) throw new Error(`upstream ${res.status}`);
     const json = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
