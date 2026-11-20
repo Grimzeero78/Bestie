@@ -38,6 +38,23 @@ const MAX_CONTENT_CHARS = 16000;
 /** The QUESTION LAW: one reply, at most one question mark. */
 const QUESTION_LIMIT = 1;
 
+/** Daily free-tier allowance exhausted (Cloudflare error 4006). */
+const QUOTA_RE = /neurons|free allocation|quota|4006/i;
+
+const QUOTA_MESSAGES: Record<string, string> = {
+  en: "(Bestie's free AI allowance for today is used up — she'll be back after the daily reset. Thanks for your patience.)",
+  sw: "(Ruhusa ya bure ya AI ya Bestie kwa leo imeisha — atarudi baada ya kuweka upya kwa siku. Asante kwa subira yako.)",
+  fr: "(Le quota quotidien gratuit d'IA de Bestie est épuisé — elle sera de retour après la réinitialisation quotidienne. Merci de votre patience.)",
+  es: "(La cuota diaria gratuita de IA de Bestie se agotó — volverá después del reinicio diario. Gracias por tu paciencia.)",
+  pt: "(A cota diária gratuita de IA da Bestie acabou — ela volta depois da redefinição diária. Obrigado pela paciência.)",
+  zh: "(Bestie 的免费 AI 每日额度已用完 — 每日重置后她会回来。感谢你的耐心。)",
+  hi: "(Bestie का निःशुल्क दैनिक AI कोटा समाप्त हो गया है — दैनिक रीसेट के बाद वह वापस आ जाएगी। धैर्य के लिए धन्यवाद।)",
+};
+
+function quotaMessage(languageCode: string): string {
+  return QUOTA_MESSAGES[languageCode] ?? QUOTA_MESSAGES.en;
+}
+
 const REPAIR_SYSTEM = `You are a precise text editor. Your ONLY job: enforce the question law on the draft reply below.
 THE QUESTION LAW: the whole reply may contain AT MOST ONE question mark. Zero is allowed and often better.
 HOW TO FIX: keep the single strongest question (an opening one or the last one) and rewrite every other question into a plain statement with the same meaning.
@@ -189,7 +206,8 @@ async function streamFromWorkersAI(
   aiBinding: { run: (model: string, body: object) => Promise<unknown> },
   system: string,
   history: IncomingMessage[],
-  stream: ReturnType<typeof makeStream>
+  stream: ReturnType<typeof makeStream>,
+  languageCode = "en"
 ): Promise<void> {
   const model = process.env.LLM_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
   const baseMessages: ChatMsg[] = [{ role: "system", content: system }, ...history];
@@ -198,13 +216,35 @@ async function streamFromWorkersAI(
     const result = (await aiBinding.run(model, {
       messages,
       stream: false,
-      max_tokens: 2048,
+      max_tokens: 1024,
     })) as { response?: string };
     return result?.response ?? "";
   };
 
-  const draft = await generate(baseMessages);
-  if (!draft.trim()) return serviceError(stream);
+  // One call, one retry for transient errors. Quota exhaustion is not retried.
+  let draft = "";
+  let quotaHit = false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      draft = await generate(baseMessages);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (QUOTA_RE.test(msg)) {
+        quotaHit = true;
+        break;
+      }
+      continue;
+    }
+    if (draft.trim()) break;
+  }
+  if (!draft.trim()) {
+    if (quotaHit) {
+      stream.enqueue(quotaMessage(languageCode));
+      stream.close();
+      return;
+    }
+    return serviceError(stream);
+  }
   const finalText = await enforceQuestionLaw(generate, draft);
   await releaseText(finalText, stream);
   stream.close();
@@ -334,7 +374,7 @@ export async function POST(req: Request) {
   const run = async () => {
     try {
       if (aiBinding) {
-        await streamFromWorkersAI(aiBinding, system, history, stream);
+        await streamFromWorkersAI(aiBinding, system, history, stream, lang.code);
       } else if (process.env.LLM_BASE_URL && process.env.LLM_API_KEY) {
         await streamFromOpenAICompatible(system, history, stream);
       } else {

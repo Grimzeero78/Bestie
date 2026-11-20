@@ -161,6 +161,29 @@ export default function BestiePage() {
     [addMessage, truncateFrom, streamReply]
   );
 
+  /** Retry an assistant reply: drop it and everything after, then re-stream from that point. */
+  const regenerate = useCallback(
+    async (messageId: string) => {
+      if (streamingRef.current) return;
+      const state = useBestieStore.getState();
+      const chatId = state.activeChatId;
+      if (!chatId) return;
+
+      const chat = state.chats.find((c) => c.id === chatId);
+      const idx = chat?.messages.findIndex((m) => m.id === messageId) ?? -1;
+      if (idx === -1) return;
+
+      const priorMessages = chat!.messages.slice(0, idx).map((m) => ({
+        role: m.role,
+        content: m.content,
+      }));
+
+      truncateFrom(chatId, messageId);
+      await streamReply(chatId, priorMessages);
+    },
+    [truncateFrom, streamReply]
+  );
+
   const stop = useCallback(() => {
     abortRef.current?.abort();
   }, []);
@@ -211,6 +234,7 @@ export default function BestiePage() {
             messages={messages}
             streaming={streaming}
             onEditResend={(messageId, text) => void editResend(messageId, text)}
+            onRegenerate={(messageId) => void regenerate(messageId)}
           />
         )}
 

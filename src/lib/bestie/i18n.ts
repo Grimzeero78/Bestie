@@ -27,7 +27,9 @@ export interface Dictionary {
   renamed: string;
   rename: string;
   export: string;
+  copy: string;
   copied: string;
+  regenerate: string;
   thinking: string;
   stop: string;
   error: string;
@@ -77,6 +79,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     rename: "Rename",
     export: "Export",
     copied: "Copied",
+    copy: "Copy",
+    regenerate: "Retry",
     thinking: "Thinking…",
     stop: "Stop",
     error: "Something broke. Try again.",
@@ -125,6 +129,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     rename: "Badilisha jina",
     export: "Hamisha",
     copied: "Imenakiliwa",
+    copy: "Nakili",
+    regenerate: "Jaribu tena",
     thinking: "Inafikiri…",
     stop: "Simamisha",
     error: "Kuna hitilafu. Jaribu tena.",
@@ -173,6 +179,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     rename: "Renommer",
     export: "Exporter",
     copied: "Copié",
+    copy: "Copier",
+    regenerate: "Réessayer",
     thinking: "Réflexion…",
     stop: "Arrêter",
     error: "Une erreur. Réessaie.",
@@ -211,6 +219,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     cancel: "Cancelar",
     edit: "Editar",
     saveResend: "Guardar y reenviar",
+    copy: "Copiar",
+    regenerate: "Reintentar",
     delete: "Eliminar",
     deleteChatTitle: "¿Eliminar esta conversación?",
     deleteChatDesc: "Desaparece para siempre. Sin copias.",
@@ -259,6 +269,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     cancel: "Cancelar",
     edit: "Editar",
     saveResend: "Salvar e reenviar",
+    copy: "Copiar",
+    regenerate: "Tentar de novo",
     delete: "Excluir",
     deleteChatTitle: "Excluir esta conversa?",
     deleteChatDesc: "Some para sempre. Nenhuma cópia.",
@@ -317,6 +329,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     rename: "重命名",
     export: "导出",
     copied: "已复制",
+    copy: "复制",
+    regenerate: "重试",
     thinking: "思考中…",
     stop: "停止",
     error: "出错了，请重试。",
@@ -365,6 +379,8 @@ export const TRANSLATIONS: Record<LanguageCode, Dictionary> = {
     rename: "नाम बदलें",
     export: "निर्यात",
     copied: "कॉपी हो गया",
+    copy: "कॉपी करें",
+    regenerate: "पुनः प्रयास",
     thinking: "सोच रहा है…",
     stop: "रोकें",
     error: "कुछ गलत हुआ। फिर प्रयास करें।",

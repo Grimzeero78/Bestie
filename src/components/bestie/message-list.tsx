@@ -7,7 +7,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Copy, Check, Pencil, X } from "lucide-react";
+import { Copy, Check, Pencil, X, RefreshCw } from "lucide-react";
 import { BestieLogo } from "@/components/bestie/logo";
 import { Button } from "@/components/ui/button";
 import type { Dictionary } from "@/lib/bestie/i18n";
@@ -49,11 +49,11 @@ function ActionChip({
   );
 }
 
-function CopyChip({ text, copied }: { text: string; copied: string }) {
+function CopyChip({ text, copy, copied }: { text: string; copy: string; copied: string }) {
   const [isCopied, setIsCopied] = useState(false);
   return (
     <ActionChip
-      label={copied}
+      label={copy}
       onClick={async () => {
         try {
           await navigator.clipboard.writeText(text);
@@ -65,7 +65,7 @@ function CopyChip({ text, copied }: { text: string; copied: string }) {
       }}
     >
       {isCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-      {isCopied ? copied : copied}
+      {isCopied ? copied : copy}
     </ActionChip>
   );
 }
@@ -160,9 +160,10 @@ interface MessageListProps {
   messages: ChatMessage[];
   streaming: boolean;
   onEditResend: (messageId: string, text: string) => void;
+  onRegenerate: (messageId: string) => void;
 }
 
-export function MessageList({ dict, messages, streaming, onEditResend }: MessageListProps) {
+export function MessageList({ dict, messages, streaming, onEditResend, onRegenerate }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const stickToBottomRef = useRef(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -233,7 +234,7 @@ export function MessageList({ dict, messages, streaming, onEditResend }: Message
                 </div>
                 {!streaming && (
                   <div className="absolute -top-2 right-0 flex translate-y-0 items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                    <CopyChip text={m.content} copied={dict.copied} />
+                    <CopyChip text={m.content} copy={dict.copy} copied={dict.copied} />
                     <ActionChip label={dict.edit} onClick={() => setEditingId(m.id)}>
                       <Pencil className="h-3 w-3" />
                       {dict.edit}
@@ -255,7 +256,13 @@ export function MessageList({ dict, messages, streaming, onEditResend }: Message
                 </div>
                 {!showTyping && m.content && (
                   <div className="absolute -top-1 right-0 flex items-center gap-1 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
-                    <CopyChip text={m.content} copied={dict.copied} />
+                    <CopyChip text={m.content} copy={dict.copy} copied={dict.copied} />
+                    {isLast && !streaming && (
+                      <ActionChip label={dict.regenerate} onClick={() => onRegenerate(m.id)}>
+                        <RefreshCw className="h-3 w-3" />
+                        {dict.regenerate}
+                      </ActionChip>
+                    )}
                   </div>
                 )}
               </div>
