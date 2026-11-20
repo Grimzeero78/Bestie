@@ -18,7 +18,13 @@
   },
   "vars": {
     // Workers AI model used through the AI binding (and the REST fallback).
-    "LLM_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    // Free plan = 10,000 Neurons/day shared by ALL models, so the model
+    // decides how many messages a day Bestie can send:
+    //   llama-3.1-8b-instruct-fp8-fast  ≈ 26 Neurons/message → ~380 msgs/day
+    //   llama-3.3-70b-instruct-fp8-fast ≈ 163 Neurons/message → ~60 msgs/day
+    // If the fast model hiccups, route.ts escalates to the 70B automatically.
+    // Flip LLM_MODEL back to the 70B if you upgrade to Workers Paid.
+    "LLM_MODEL": "@cf/meta/llama-3.1-8b-instruct-fp8-fast"
   },
   // NOTE: No secrets are required for Workers AI. If you prefer another
   // OpenAI-compatible provider instead, set these with `wrangler secret put`:

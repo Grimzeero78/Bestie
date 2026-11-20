@@ -32,14 +32,16 @@ interface IncomingMessage {
 
 type ChatMsg = { role: string; content: string };
 
-const MAX_HISTORY_MESSAGES = 40;
-const MAX_CONTENT_CHARS = 16000;
+// Context-window safety: smaller fast models have less room, and every token
+// of history costs Neurons. 12 recent turns is plenty for a companion chat.
+const MAX_HISTORY_MESSAGES = 12;
+const MAX_CONTENT_CHARS = 2000;
 
 /** The QUESTION LAW: one reply, at most one question mark. */
 const QUESTION_LIMIT = 1;
 
 /** Daily free-tier allowance exhausted (Cloudflare error 4006). */
-const QUOTA_RE = /neurons|free allocation|quota|4006/i;
+const QUOTA_RE = /neurons|free allocation|quota|4006|exceeded your daily/i;
 
 const QUOTA_MESSAGES: Record<string, string> = {
   en: "(Bestie's free AI allowance for today is used up — she'll be back after the daily reset. Thanks for your patience.)",
@@ -201,7 +203,17 @@ function extractDeltaFromSsePayload(payload: string): string | undefined {
  * Cloudflare Workers AI via the `AI` binding — used when the app runs inside
  * a Cloudflare Worker (deployed with @opennextjs/cloudflare).
  * Needs no API keys: the binding is tied to the worker's own account.
+ *
+ * Model strategy on the free plan (10,000 Neurons/day, account-wide):
+ *   FAST  @cf/meta/llama-3.1-8b-instruct-fp8-fast  ≈ 26 Neurons/message → ~380 msgs/day
+ *   SMART @cf/meta/llama-3.3-70b-instruct-fp8-fast ≈ 163 Neurons/message → ~60 msgs/day
+ * The FAST model is the primary; if it fails transiently or returns nothing,
+ * the request escalates to the SMART model so a chat never dies on a hiccup.
+ * LLM_MODEL (wrangler.jsonc vars) overrides the primary.
  */
+const MODEL_FAST = "@cf/meta/llama-3.1-8b-instruct-fp8-fast";
+const MODEL_SMART = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+
 async function streamFromWorkersAI(
   aiBinding: { run: (model: string, body: object) => Promise<unknown> },
   system: string,
@@ -209,10 +221,11 @@ async function streamFromWorkersAI(
   stream: ReturnType<typeof makeStream>,
   languageCode = "en"
 ): Promise<void> {
-  const model = process.env.LLM_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
+  const primary = process.env.LLM_MODEL || MODEL_FAST;
+  const fallback = primary === MODEL_SMART ? MODEL_FAST : MODEL_SMART;
   const baseMessages: ChatMsg[] = [{ role: "system", content: system }, ...history];
 
-  const generate = async (messages: ChatMsg[]): Promise<string> => {
+  const runOnce = async (model: string, messages: ChatMsg[]): Promise<string> => {
     const result = (await aiBinding.run(model, {
       messages,
       stream: false,
@@ -221,12 +234,15 @@ async function streamFromWorkersAI(
     return result?.response ?? "";
   };
 
-  // One call, one retry for transient errors. Quota exhaustion is not retried.
+  const generate = (messages: ChatMsg[]) => runOnce(primary, messages);
+
+  // Attempt chain: primary, primary retry, then the other model.
+  // Quota exhaustion is NOT retried — it is account-wide, not per-model.
   let draft = "";
   let quotaHit = false;
-  for (let attempt = 0; attempt < 2; attempt++) {
+  for (const model of [primary, primary, fallback]) {
     try {
-      draft = await generate(baseMessages);
+      draft = await runOnce(model, baseMessages);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       if (QUOTA_RE.test(msg)) {
