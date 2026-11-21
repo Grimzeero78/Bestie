@@ -67,6 +67,45 @@ function countQuestionMarks(text: string): number {
   return (text.match(/\?/g) || []).length;
 }
 
+/**
+ * Detect small-model degeneration: the same 6+ word window appearing 3+ times
+ * (a repetition loop — common on 8B models outside English). Cheap scan, no
+ * extra model call, so it runs on every draft.
+ */
+function looksDegenerate(text: string): boolean {
+  const words = text.replace(/\s+/g, " ").trim().toLowerCase().split(" ");
+  if (words.length < 120) return false;
+  for (let n = 6; n <= 14; n++) {
+    const seen = new Map<string, number>();
+    for (let i = 0; i + n <= words.length; i++) {
+      const key = words.slice(i, i + n).join(" ");
+      const count = (seen.get(key) ?? 0) + 1;
+      if (count >= 3) return true;
+      seen.set(key, count);
+    }
+  }
+  return false;
+}
+
+/** Cut a degenerate draft just before its first repeated window (clean prefix only). */
+function truncateDegenerate(text: string): string {
+  const words = text.replace(/\s+/g, " ").trim().split(" ");
+  for (let n = 6; n <= 14; n++) {
+    const seen = new Map<string, number>();
+    for (let i = 0; i + n <= words.length; i++) {
+      const key = words.slice(i, i + n).join(" ").toLowerCase();
+      const count = (seen.get(key) ?? 0) + 1;
+      if (count >= 3) {
+        const cut = words.slice(0, i).join(" ").trim();
+        if (cut.length > 60) return cut;
+        break;
+      }
+      seen.set(key, count);
+    }
+  }
+  return text.trim();
+}
+
 /** Keep the draft unless it breaks the question law; then try one repair pass. */
 async function enforceQuestionLaw(
   generate: (messages: ChatMsg[]) => Promise<string>,
@@ -274,6 +313,20 @@ async function streamFromWorkersAI(
       return;
     }
     return serviceError(stream);
+  }
+  // Quality gate: if the small model looped (common outside English), rescue
+  // the reply with the larger model once; if that fails, serve only the
+  // clean prefix so a broken repetition never reaches the user.
+  if (looksDegenerate(draft)) {
+    if (primary !== MODEL_SMART) {
+      try {
+        const rescue = await runOnce(MODEL_SMART, baseMessages);
+        if (rescue.trim()) draft = rescue.trim();
+      } catch {
+        /* rescue unavailable — fall through to the clean prefix */
+      }
+    }
+    if (looksDegenerate(draft)) draft = truncateDegenerate(draft);
   }
   const finalText = await enforceQuestionLaw(generate, draft);
   await releaseText(finalText, stream);
